@@ -1,5 +1,5 @@
 if (!process.env.MONGO_URI) {
-    throw new Error("There is not= MONGO_URI in the environment variables")
+    throw new Error("There is no MONGO_URI in the environment variables")
 }
 
 interface Config {
