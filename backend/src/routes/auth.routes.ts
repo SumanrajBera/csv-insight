@@ -1,10 +1,10 @@
 import { Router } from 'express'
-import type { IUser } from '../types/user.types.js'
+import { userSchema, type IUser } from '../types/user.types.js'
 
 const router = Router()
 
 router.post("/signup", (req, res) => {
-    const data: IUser = req.body
+    const request = userSchema.safeParse(req.body)
 })
 
 router.post("/login", (req, res) => {
