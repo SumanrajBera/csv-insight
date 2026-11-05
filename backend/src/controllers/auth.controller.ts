@@ -1,7 +1,10 @@
 import { userModel } from '../models/user.model.js'
-import { userSchema } from '../types/user.types.js'
+import { loginSchema, userSchema, type IUserDocument } from '../types/user.types.js'
 import { AppError } from '../utils/AppError.js'
 import { type Request, type Response, type NextFunction } from 'express'
+import bcrypt from 'bcrypt'
+import jwt from 'jsonwebtoken'
+import { config } from '../config/config.js'
 
 export const signupController = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -39,6 +42,45 @@ export const signupController = async (req: Request, res: Response, next: NextFu
             );
         }
 
+        next(error)
+    }
+}
+
+export const loginController = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const request = loginSchema.safeParse(req.body)
+
+        if (!request.success) throw new AppError(400, "Please provide proper details")
+
+        const userData: IUserDocument | null = await userModel.findOne({
+            $or: [
+                { username: request.data.identifier },
+                { email: request.data.identifier }
+            ]
+        }).select('+password')
+
+
+        if (!userData) throw new AppError(401, "Invalid Credentials")
+
+        let isPasswordValid = await bcrypt.compare(request.data.password, userData.password)
+
+        if (!isPasswordValid) throw new AppError(401, "Invalid Credentials")
+
+        const token = jwt.sign({
+            email: userData.email,
+            username: userData.username,
+            id: userData._id
+        }, config.JWT_SECRET_KEY, { expiresIn: '7d' })
+
+        res.cookie("token", token, {
+            httpOnly: true,
+            secure: config.NODE_ENV === "production",
+            sameSite: config.NODE_ENV === "production" ? "strict" : "lax",
+            maxAge: 7 * 24 * 60 * 60 * 1000
+        })
+
+        return res.status(200).json({ message: "Login successful" })
+    } catch (error) {
         next(error)
     }
 }

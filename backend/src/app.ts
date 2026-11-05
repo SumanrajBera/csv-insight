@@ -1,10 +1,12 @@
 import express, { type Request, type Response, type NextFunction } from "express";
 import authRouter from './routes/auth.routes.js'
 import { AppError } from "./utils/AppError.js";
+import cookieParser from 'cookie-parser'
 
 export const app = express()
 
 app.use(express.json())
+app.use(cookieParser())
 
 app.use("/api/auth", authRouter)
 
